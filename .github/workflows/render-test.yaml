@@ -1,0 +1,196 @@
+name: Render mosaic
+# モザイクのエフェクトのコンパイルと描画を、各 OS の描画方式で確かめる。
+# - Windows: D3D11。GPU の無いランナーでは DXGI のソフトウェアのアダプター (WARP) で描く
+# - Ubuntu: Mesa の OpenGL
+# - macOS: OpenGL
+# 開発者は macOS と Linux の機材を持たないため、この 2 つの OS の描画はこのワークフローで検証する。
+# mosaic-integration-test は検査に外れると終了コード 1 を返す。mosaic-benchmark は GPU 時間を記録するだけで、合否には使わない
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - 'data/**'
+      - 'tests/**'
+      - '.github/workflows/render-test.yaml'
+permissions:
+  contents: read
+env:
+  SCENARIOS: default-full region overflow large-cell zero-size resize-keeps-px translucent scene settings-update
+  BENCH_CELL_SIZES: 2 16 256
+jobs:
+  windows-render:
+    name: Render on Windows (D3D11)
+    runs-on: windows-2022
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build plugin and render tests
+        uses: ./.github/actions/build-plugin
+        with:
+          target: x64
+          config: RelWithDebInfo
+
+      - name: Build D3D11 module
+        run: cmake --build .deps/obs-studio-31.1.1/build_x64 --config Release --target libobs-d3d11
+
+      - name: List graphics adapters
+        run: Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion | Format-Table -AutoSize
+
+      - name: Render mosaic
+        run: |
+          New-Item -ItemType Directory -Path test-images | Out-Null
+          $env:MOSAIC_TEST_OUTPUT_DIR = "$PWD\test-images"
+          ctest --test-dir build_x64 -C RelWithDebInfo -R d3d11 --output-on-failure 2>&1 | Tee-Object -FilePath render-windows.log
+          $failed = $LASTEXITCODE
+          $env:PATH = "$PWD\.deps\bin\64bit;$PWD\.deps\obs-deps-2025-07-11-x64\bin;$env:PATH"
+          # LoadLibrary は相対パスのプラグインを読み込めないため、絶対パスで渡す
+          & "$PWD\build_x64\RelWithDebInfo\mosaic-benchmark.exe" "$PWD\build_x64\RelWithDebInfo\simple-mosaic.dll" `
+            "$PWD\data" "$PWD\.deps\obs-studio-31.1.1\build_x64\libobs-d3d11\Release\libobs-d3d11.dll" `
+            "$PWD\.deps\obs-studio-31.1.1\libobs\data" $env:BENCH_CELL_SIZES.Split(' ') 2>&1 |
+            Tee-Object -FilePath render-windows.log -Append
+          exit $failed
+
+      - name: Upload render log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-windows
+          path: |
+            render-windows.log
+            test-images
+          if-no-files-found: warn
+
+  ubuntu-render:
+    name: Render on Ubuntu (Mesa OpenGL)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build plugin
+        uses: ./.github/actions/build-plugin
+        with:
+          target: x86_64
+          config: RelWithDebInfo
+
+      - name: Install render dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth libgl1-mesa-dri libegl-mesa0 libx11-dev
+
+      - name: Build render tests
+        run: |
+          cmake -S . -B build_x86_64 -DENABLE_RENDER_TESTS=ON
+          cmake --build build_x86_64 --config RelWithDebInfo --target mosaic-integration-test mosaic-benchmark
+
+      - name: Render mosaic
+        run: |
+          set -o pipefail
+          plugin=$(find "$PWD/build_x86_64" -name 'simple-mosaic.so' -print -quit)
+          integration=$(find "$PWD/build_x86_64" -name 'mosaic-integration-test' -type f -print -quit)
+          bench=$(find "$PWD/build_x86_64" -name 'mosaic-benchmark' -type f -print -quit)
+          gl=$(find /usr/lib -name 'libobs-opengl.so*' -print -quit)
+          echo "plugin=${plugin} integration=${integration} bench=${bench} gl=${gl}"
+          mkdir -p test-images
+          export MOSAIC_TEST_OUTPUT_DIR="$PWD/test-images"
+          failed=0
+          for scenario in ${SCENARIOS}; do
+            if xvfb-run -a -s '-screen 0 1280x720x24' "${integration}" "${plugin}" "$PWD/data" "${gl}" \
+              /usr/share/obs/libobs "${scenario}" >> render-ubuntu.log 2>&1; then
+              echo "PASS ${scenario}" | tee -a render-ubuntu.log
+            else
+              echo "FAIL ${scenario}" | tee -a render-ubuntu.log
+              failed=1
+            fi
+          done
+          xvfb-run -a -s '-screen 0 1280x720x24' "${bench}" "${plugin}" "$PWD/data" "${gl}" /usr/share/obs/libobs \
+            ${BENCH_CELL_SIZES} 2>&1 | tee -a render-ubuntu.log || true
+          exit ${failed}
+
+      - name: Upload render log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-ubuntu
+          path: |
+            render-ubuntu.log
+            test-images
+          if-no-files-found: warn
+
+  macos-render:
+    name: Render on macOS (OpenGL)
+    runs-on: macos-15
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: zsh --no-rcs --errexit --pipefail {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Select Xcode
+        run: sudo xcode-select --switch /Applications/Xcode_16.1.0.app/Contents/Developer
+
+      - name: Build plugin
+        uses: ./.github/actions/build-plugin
+        with:
+          target: macos-universal
+          config: RelWithDebInfo
+
+      - name: Build render tests and OpenGL module
+        run: |
+          cmake -S . -B build_macos -DENABLE_RENDER_TESTS=ON
+          cmake --build build_macos --config RelWithDebInfo --target mosaic-integration-test mosaic-benchmark
+          cmake --build .deps/obs-studio-31.1.1/build_universal --config Release --target libobs-opengl
+
+      - name: Render mosaic
+        run: |
+          plugin=$(find "$PWD/build_macos" -path '*RelWithDebInfo/simple-mosaic.plugin/Contents/MacOS/simple-mosaic' -print -quit)
+          integration=$(find "$PWD/build_macos" -name 'mosaic-integration-test' -type f -perm -u+x -print -quit)
+          bench=$(find "$PWD/build_macos" -name 'mosaic-benchmark' -type f -perm -u+x -print -quit)
+          gl=$(find "$PWD/.deps/obs-studio-31.1.1/build_universal" \( -name 'libobs-opengl.dylib' -o -name 'libobs-opengl.so' \) -print -quit)
+          print "plugin=${plugin} integration=${integration} bench=${bench} gl=${gl}"
+          # 実行ファイルと libobs-opengl は @rpath の libobs.framework を参照する。ビルド時の framework は .deps/Frameworks、
+          # libobs が参照する FFmpeg などの dylib は .deps の obs-deps にある
+          deps_lib=$(dirname "$(find "$PWD/.deps" -name 'libavcodec.dylib' -print -quit)")
+          print "deps_lib=${deps_lib}"
+          export DYLD_FRAMEWORK_PATH="$PWD/.deps/Frameworks"
+          export DYLD_LIBRARY_PATH="${deps_lib}"
+          core="$PWD/.deps/obs-studio-31.1.1/libobs/data"
+          mkdir -p test-images
+          export MOSAIC_TEST_OUTPUT_DIR="$PWD/test-images"
+          failed=0
+          for scenario in ${=SCENARIOS}; do
+            if "${integration}" "${plugin}" "$PWD/data" "${gl}" "${core}" "${scenario}" >> render-macos.log 2>&1; then
+              print "PASS ${scenario}" | tee -a render-macos.log
+            else
+              print "FAIL ${scenario}" | tee -a render-macos.log
+              failed=1
+            fi
+          done
+          "${bench}" "${plugin}" "$PWD/data" "${gl}" "${core}" ${=BENCH_CELL_SIZES} 2>&1 | tee -a render-macos.log || true
+          exit ${failed}
+
+      - name: Upload render log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-macos
+          path: |
+            render-macos.log
+            test-images
+          if-no-files-found: warn

@@ -1,0 +1,123 @@
+// 四角形の範囲をモザイクにするエフェクト。3 つのパスで描く。
+// - Rows: 範囲の各行について、マスの幅ごとの平均を rows (マスの列の数 x 範囲の高さ) に書く
+// - Cells: rows を縦に平均し、マスごとの平均を cells (マスの列の数 x マスの行の数) に書く
+// - Draw: 範囲の外は image をそのまま返し、範囲の中は自分のマスの平均を cells から読んで返す
+// 平均を横と縦の 2 段に分けるのは、大きいマスでも 1 画素あたりの読み取りを抑え、GPU が多くの画素を並列に処理できるようにするため。
+// image は対象を描いた中間のテクスチャで、色はアルファを掛けた値。平均もアルファを掛けたまま取るため、
+// 透明な画素の色がマスの色に混ざらない。
+// D3D11 と OpenGL の両方でコンパイルできるよう、型の変換はコンストラクタの形で書く。回数が実行時に決まるループの中では、
+// D3D11 が勾配を使う Sample を許さないため、SampleLevel で読む。
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform texture2d rows;
+uniform texture2d cells;
+
+uniform float2 tex_size;    // 対象の幅と高さ (px)
+uniform float4 rect;        // 範囲の左上の x・y と右下の x・y (px)。対象の内側へ切り詰め済み
+uniform float cell_size;    // マスの一辺 (px)
+uniform float2 rows_size;   // rows の幅と高さ (マスの列の数、範囲の高さ)
+uniform float2 cells_size;  // cells の幅と高さ (マスの列の数、マスの行の数)
+uniform int pair_count;     // マスの一辺を 2 画素ずつ読む回数。ceil(cell_size / 2)
+
+sampler_state linearClamp {
+	Filter = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertInOut {
+	float4 pos : POSITION;
+	float2 uv : TEXCOORD0;
+};
+
+VertInOut VSDefault(VertInOut v_in)
+{
+	VertInOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv = v_in.uv;
+	return vert_out;
+}
+
+// 隣り合う 2 画素の境目の点を線形補間で読むと、2 画素の平均が 1 回で得られる。
+// マスの幅が奇数のときの最後の 1 画素は、その画素の中心を読み、重みを 1 画素分にする
+
+float4 PSRows(VertInOut v_in) : TARGET
+{
+	// 補間された UV に大きさを掛けた位置は、描画器によって画素の中心から僅かにずれるため、番号へ丸める
+	float2 index = floor(v_in.uv * rows_size);
+	float start = rect.x + index.x * cell_size;
+	float end = min(start + cell_size, rect.z);
+	float y = rect.y + index.y + 0.5;
+
+	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+	float total = 0.0;
+	for (int i = 0; i < pair_count; ++i) {
+		float x0 = start + 2.0 * float(i);
+		if (x0 < end) {
+			float w = min(end - x0, 2.0);
+			sum += image.SampleLevel(linearClamp, float2(x0 + w * 0.5, y) / tex_size, 0.0) * w;
+			total += w;
+		}
+	}
+	return sum / max(total, 1.0);
+}
+
+float4 PSCells(VertInOut v_in) : TARGET
+{
+	float2 index = floor(v_in.uv * cells_size);
+	// rows の中の、このマスの行の範囲。rows の y は範囲の上端からの行の番号
+	float start = index.y * cell_size;
+	float end = min(start + cell_size, rows_size.y);
+	float u = (index.x + 0.5) / rows_size.x;
+
+	float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+	float total = 0.0;
+	for (int j = 0; j < pair_count; ++j) {
+		float y0 = start + 2.0 * float(j);
+		if (y0 < end) {
+			float w = min(end - y0, 2.0);
+			sum += rows.SampleLevel(linearClamp, float2(u, (y0 + w * 0.5) / rows_size.y), 0.0) * w;
+			total += w;
+		}
+	}
+	return sum / max(total, 1.0);
+}
+
+float4 PSDraw(VertInOut v_in) : TARGET
+{
+	float2 px = floor(v_in.uv * tex_size);
+	if (px.x < rect.x || px.y < rect.y || px.x >= rect.z || px.y >= rect.w) {
+		return image.Sample(linearClamp, (px + 0.5) / tex_size);
+	}
+	// 0.5 を足すのは、割り算の誤差でマスの境目の画素が前のマスへずれないようにするため
+	float2 index = floor((px - rect.xy + 0.5) / cell_size);
+	return cells.Sample(linearClamp, (index + 0.5) / cells_size);
+}
+
+technique Rows
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSRows(v_in);
+	}
+}
+
+technique Cells
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSCells(v_in);
+	}
+}
+
+technique Draw
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSDraw(v_in);
+	}
+}
