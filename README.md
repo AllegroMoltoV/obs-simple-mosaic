@@ -4,6 +4,8 @@ OBS Studio 向けの、四角形の範囲をモザイクにするシンプルな
 
 A simple video filter plugin for OBS Studio that pixelates a rectangular region.
 
+[配信プラグイン倉庫くん](https://soko-kun.allegromoltov.jp/plugins/allegromoltov/obs-simple-mosaic) にも掲載しています。 / Also listed on [Plugin Soko-kun](https://soko-kun.allegromoltov.jp/plugins/allegromoltov/obs-simple-mosaic?lang=en).
+
 ![シンプルモザイクの設定で範囲とマスの大きさを変えながら、画像の一部にモザイクがかかる様子](docs/images/obs-simple-mosaic.gif)
 
 ## Features / 機能
