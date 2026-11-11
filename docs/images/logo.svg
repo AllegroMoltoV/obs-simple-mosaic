@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Simple Mosaic</title>
+  <desc id="description">A landscape with a sun where only the square in the middle is shown as coarse mosaic cells.</desc>
+  <defs>
+    <clipPath id="frame"><rect width="512" height="512" rx="72"/></clipPath>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#78C8FF"/><stop offset="1" stop-color="#2846A0"/></linearGradient>
+    <linearGradient id="hill" x1="0" y1="340" x2="0" y2="512" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#46AA6E"/><stop offset="1" stop-color="#1E6E46"/></linearGradient>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <circle cx="300" cy="230" r="110" fill="#FFD65A"/>
+    <path d="M 0,512 L 0,380.0 L 8,382.7 L 16,385.5 L 24,388.2 L 32,390.9 L 40,393.5 L 48,396.0 L 56,398.5 L 64,400.9 L 72,403.2 L 80,405.4 L 88,407.4 L 96,409.4 L 104,411.2 L 112,412.8 L 120,414.3 L 128,415.6 L 136,416.8 L 144,417.8 L 152,418.6 L 160,419.2 L 168,419.7 L 176,419.9 L 184,420.0 L 192,419.9 L 200,419.6 L 208,419.1 L 216,418.4 L 224,417.5 L 232,416.5 L 240,415.3 L 248,413.9 L 256,412.4 L 264,410.7 L 272,408.8 L 280,406.9 L 288,404.8 L 296,402.5 L 304,400.2 L 312,397.8 L 320,395.3 L 328,392.7 L 336,390.1 L 344,387.4 L 352,384.7 L 360,382.0 L 368,379.2 L 376,376.5 L 384,373.7 L 392,371.0 L 400,368.4 L 408,365.8 L 416,363.3 L 424,360.8 L 432,358.4 L 440,356.2 L 448,354.0 L 456,352.0 L 464,350.1 L 472,348.3 L 480,346.7 L 488,345.3 L 496,344.0 L 504,342.9 L 512,342.0 L 512,512 Z" fill="url(#hill)"/>
+    <rect x="128" y="128" width="64" height="64" fill="#5F9FE1"/>
+    <rect x="192" y="128" width="64" height="64" fill="#BCC094"/>
+    <rect x="256" y="128" width="64" height="64" fill="#FFD65A"/>
+    <rect x="320" y="128" width="64" height="64" fill="#EACF6D"/>
+    <rect x="128" y="192" width="64" height="64" fill="#5790D4"/>
+    <rect x="192" y="192" width="64" height="64" fill="#FED55B"/>
+    <rect x="256" y="192" width="64" height="64" fill="#FFD65A"/>
+    <rect x="320" y="192" width="64" height="64" fill="#FFD65A"/>
+    <rect x="128" y="256" width="64" height="64" fill="#4B7FCA"/>
+    <rect x="192" y="256" width="64" height="64" fill="#CEBE78"/>
+    <rect x="256" y="256" width="64" height="64" fill="#FFD65A"/>
+    <rect x="320" y="256" width="64" height="64" fill="#F7D25F"/>
+    <rect x="128" y="320" width="64" height="64" fill="#416FBE"/>
+    <rect x="192" y="320" width="64" height="64" fill="#4671BB"/>
+    <rect x="256" y="320" width="64" height="64" fill="#758AA1"/>
+    <rect x="320" y="320" width="64" height="64" fill="#567CAE"/>
+    <rect x="128" y="128" width="256" height="256" fill="none" stroke="#FFFFFF" stroke-width="10" rx="6"/>
+  </g>
+</svg>
