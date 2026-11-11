@@ -139,23 +139,37 @@ struct Scenario {
 
 const Scenario scenarios[] = {
 	// 設定を渡さずに付けると、範囲が対象の全体へ初期化され、全体がモザイクになる
+	// 範囲を初期化したときは、開いている設定画面が表示を読み直せるよう update_properties を知らせる
 	{"default-full",
 	 [](Checker &c) {
-		 with_filtered_source(
-			 c, "default-full", gradient, nullptr,
-			 [](Checker &c, obs_source_t *source, obs_source_t *filter, const Image &ref) {
-				 c.expect(setting(filter, "region_x") == 0 && setting(filter, "region_y") == 0 &&
-						  setting(filter, "region_width") == kCanvasWidth &&
-						  setting(filter, "region_height") == kCanvasHeight,
-					  "region was not initialized to the whole target");
-				 c.expect(setting(filter, "cell_size") == 16, "default cell size is not 16");
-				 Image out;
-				 if (render_and_save(c, "default-full", source, out)) {
-					 const Rect all = {0, 0, kCanvasWidth, kCanvasHeight};
-					 check_mosaic(c, ref, out, all, 16);
-					 check_not_flat(c, out, all, 16);
-				 }
-			 });
+		 obs_source_t *source = create_test_source(gradient);
+		 obs_source_t *filter = obs_source_create(kFilterId, "mosaic", nullptr, nullptr);
+		 Image ref;
+		 if (!source || !filter) {
+			 c.expect(false, "failed to create the test source or the filter");
+		 } else if (render_and_save(c, "default-full-reference", source, ref)) {
+			 std::atomic_bool reloaded = false;
+			 signal_handler_t *signals = obs_source_get_signal_handler(filter);
+			 signal_handler_connect(signals, "update_properties", mark_updated, &reloaded);
+			 obs_source_filter_add(source, filter);
+			 c.expect(wait_frames(4), "frames did not advance");
+			 signal_handler_disconnect(signals, "update_properties", mark_updated, &reloaded);
+			 c.expect(reloaded.load(),
+				  "update_properties was not signaled after the region was initialized");
+			 c.expect(setting(filter, "region_x") == 0 && setting(filter, "region_y") == 0 &&
+					  setting(filter, "region_width") == kCanvasWidth &&
+					  setting(filter, "region_height") == kCanvasHeight,
+				  "region was not initialized to the whole target");
+			 c.expect(setting(filter, "cell_size") == 16, "default cell size is not 16");
+			 Image out;
+			 if (render_and_save(c, "default-full", source, out)) {
+				 const Rect all = {0, 0, kCanvasWidth, kCanvasHeight};
+				 check_mosaic(c, ref, out, all, 16);
+				 check_not_flat(c, out, all, 16);
+			 }
+		 }
+		 obs_source_release(filter);
+		 obs_source_release(source);
 	 }},
 	// 範囲の外は元のまま、範囲の中はマスの区切りが範囲の左上にそろう
 	{"region",

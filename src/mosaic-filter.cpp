@@ -99,6 +99,9 @@ public:
 		obs_data_set_bool(settings, kRegionInitialized, true);
 		obs_source_update(context_, settings);
 		obs_data_release(settings);
+		// 開いている設定画面は設定を書き換えても表示を読み直さないため、読み直しを知らせる。
+		// 知らせないと、範囲が 0 px と表示されたまま全体にモザイクがかかり、表示と実際が食い違う
+		obs_source_update_properties(context_);
 	}
 
 	void Render()
