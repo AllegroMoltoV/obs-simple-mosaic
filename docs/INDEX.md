@@ -11,6 +11,7 @@ context compaction で文脈が失われた場合は、この索引から必要�
 | 配布規約、倉庫くんの掲載条件、既存プラグインの比較 | `docs/reports/2026-11-11-distribution-conventions.md` |
 | 実行ログ (生の出力。git 追跡対象外) | `.logs/` |
 | 実行ログ (残す価値があると判断したもの) | `docs/logs/` |
+| 統合テストの結果、1920x1080 の GPU 時間、描画方式の経緯 | `docs/logs/2026-11-11-render-tests-and-gpu-time.md` |
 | 計画と決定事項 (Beads 使用時の正本) | `bd show <親課題>` |
 | 計画 (Beads 非使用時) | `.prompts/PLANS/` |
 | 判断を要する論点 (Beads 非使用時) | `.prompts/DISCUSSIONS/` |
