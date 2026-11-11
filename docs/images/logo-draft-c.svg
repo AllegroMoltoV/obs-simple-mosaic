@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Simple Mosaic</title>
+  <desc id="description">The letter M built only from square cells in shades of white on a deep indigo background.</desc>
+  <defs><clipPath id="frame"><rect width="512" height="512" rx="72"/></clipPath></defs>
+  <g clip-path="url(#frame)">
+    <rect width="512" height="512" fill="#3F3A8C"/>
+    <rect x="100" y="100" width="56" height="56" rx="6" fill="#FFFFFF"/>
+    <rect x="356" y="100" width="56" height="56" rx="6" fill="#FFFFFF"/>
+    <rect x="100" y="164" width="56" height="56" rx="6" fill="#C9C3FF"/>
+    <rect x="164" y="164" width="56" height="56" rx="6" fill="#E3E0FF"/>
+    <rect x="292" y="164" width="56" height="56" rx="6" fill="#F1EFFF"/>
+    <rect x="356" y="164" width="56" height="56" rx="6" fill="#C9C3FF"/>
+    <rect x="100" y="228" width="56" height="56" rx="6" fill="#FFFFFF"/>
+    <rect x="228" y="228" width="56" height="56" rx="6" fill="#C9C3FF"/>
+    <rect x="356" y="228" width="56" height="56" rx="6" fill="#FFFFFF"/>
+    <rect x="100" y="292" width="56" height="56" rx="6" fill="#C9C3FF"/>
+    <rect x="356" y="292" width="56" height="56" rx="6" fill="#C9C3FF"/>
+    <rect x="100" y="356" width="56" height="56" rx="6" fill="#FFFFFF"/>
+    <rect x="356" y="356" width="56" height="56" rx="6" fill="#FFFFFF"/>
+  </g>
+</svg>

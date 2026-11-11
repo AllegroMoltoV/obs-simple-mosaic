@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Simple Mosaic</title>
+  <desc id="description">A simple face on an orange background whose eyes are hidden by a band of mosaic cells.</desc>
+  <defs><clipPath id="frame"><rect width="512" height="512" rx="72"/></clipPath></defs>
+  <g clip-path="url(#frame)">
+    <rect width="512" height="512" fill="#FF8A65"/>
+    <circle cx="256" cy="286" r="170" fill="#FFE0C2"/>
+    <path d="M 86,270 Q 96,110 256,104 Q 416,110 426,270 Q 390,180 256,176 Q 122,180 86,270 Z" fill="#5D4037"/>
+    <path d="M 200,366 Q 256,404 312,366" fill="none" stroke="#C0573E" stroke-width="16" stroke-linecap="round"/>
+    <rect x="95" y="230" width="46" height="46" fill="#FFE0C2"/>
+    <rect x="141" y="230" width="46" height="46" fill="#E8C3A3"/>
+    <rect x="187" y="230" width="46" height="46" fill="#5D4037"/>
+    <rect x="233" y="230" width="46" height="46" fill="#F2D1B3"/>
+    <rect x="279" y="230" width="46" height="46" fill="#7A5A4C"/>
+    <rect x="325" y="230" width="46" height="46" fill="#FFE0C2"/>
+    <rect x="371" y="230" width="46" height="46" fill="#D9B394"/>
+    <rect x="95" y="276" width="46" height="46" fill="#F2D1B3"/>
+    <rect x="141" y="276" width="46" height="46" fill="#8D6E63"/>
+    <rect x="187" y="276" width="46" height="46" fill="#E8C3A3"/>
+    <rect x="233" y="276" width="46" height="46" fill="#FFE0C2"/>
+    <rect x="279" y="276" width="46" height="46" fill="#6D4C41"/>
+    <rect x="325" y="276" width="46" height="46" fill="#F2D1B3"/>
+    <rect x="371" y="276" width="46" height="46" fill="#D9B394"/>
+  </g>
+</svg>
