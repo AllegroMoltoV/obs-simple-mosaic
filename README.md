@@ -149,6 +149,10 @@ AllegroMoltoV - https://www.allegromoltov.jp
 
 ## Changelog / 更新情報
 
+### v1.0.1 (2026-11-13)
+
+- リリースの配布物にビルドの来歴の証明 (GitHub Artifact Attestation) を付けるようにしました。プラグインの動作は v1.0.0 と同じです。
+
 ### v1.0.0 (2026-11-11)
 
 - 最初の公開版です。
