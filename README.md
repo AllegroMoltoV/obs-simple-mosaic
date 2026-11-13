@@ -1,4 +1,4 @@
-# Simple Mosaic Plugin for OBS Studio
+# シンプルモザイク / Simple Mosaic
 
 OBS Studio 向けの、四角形の範囲をモザイクにするシンプルな映像フィルターのプラグインです。
 
